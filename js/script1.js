@@ -31,6 +31,7 @@ let COLOR={
 var Util = {
   percentRemaining: function(n, total)          { return (n%total)/total;                                         },
   toInt:            function(obj, def)          { if (obj !== null) { var x = parseInt(obj, 10); if (!isNaN(x)) return x; } return Util.toInt(def, 0); },
+  interpolate:      function(a,b,percent)       { return a + (b-a)*percent                                        },
   easeIn:           function(a,b,percent)       { return a + (b-a)*Math.pow(percent,2);                           },
   easeOut:          function(a,b,percent)       { return a + (b-a)*(1-Math.pow(1-percent,2));                     },
   easeInOut:        function(a,b,percent)       { return a + (b-a)*((-Math.cos(percent*Math.PI)/2) + 0.5);        }
@@ -38,9 +39,11 @@ var Util = {
 
 
 //For Player
-let playerX=0;
+let playerX = 0;
+let playerZ = null;
 
 let segments=[];
+
 
 function addSegment(curve,u){
 	let index = segments.length;
@@ -134,10 +137,22 @@ function addSCurves() {
 }
 
 function setInitialSegments(){
-	for(let i=0;i<500;i++){
-    addSegment(-10,60);
-
-	}
+	 for(let i=0;i<500;i++){
+    addSegment(0,40);
+    addStraight(ROAD.LENGTH.SHORT/2);
+    addHill(ROAD.LENGTH.SHORT, ROAD.HILL.LOW);
+    addLowRollingHills();
+    addCurve(ROAD.LENGTH.LONG, -ROAD.CURVE.MEDIUM, ROAD.HILL.MEDIUM);
+    addCurve(ROAD.LENGTH.MEDIUM, ROAD.CURVE.MEDIUM, ROAD.HILL.LOW);
+    addLowRollingHills();
+    addCurve(ROAD.LENGTH.LONG, ROAD.CURVE.MEDIUM, ROAD.HILL.MEDIUM);
+    addStraight();
+    
+    addHill(ROAD.LENGTH.LONG, ROAD.HILL.HIGH);
+    addCurve(ROAD.LENGTH.LONG, ROAD.CURVE.MEDIUM, -ROAD.HILL.LOW);
+    addHill(ROAD.LENGTH.LONG, -ROAD.HILL.MEDIUM);
+    addStraight();
+	 }
 }
 
 function findSegment(z) {
@@ -172,25 +187,29 @@ function renderRoad(){
   //            segment.color);
 
 	//   maxy = segment.p2.screen.y;
-  // }
-  
+  // }      
+  var playerSegment = findSegment(position+playerZ);
+  var playerPercent = Util.percentRemaining(position+playerZ, segmentLength);
   var baseSegment = findSegment(position);
   var basePercent = Util.percentRemaining(position, segmentLength);
-  var dx = - (baseSegment.curve * basePercent);
   var maxy = CANVAS_HEIGHT;
+  var playerY       = Util.interpolate(playerSegment.p1.world.y, playerSegment.p2.world.y, playerPercent);
+  
   var x  = 0;
+  var dx = - (baseSegment.curve * basePercent);
   for(n = 0 ; n < drawDistance ; n++) {
 
     segment = segments[(baseSegment.index + n) % segments.length];
 
-    project(segment.p1, (playerX * roadWidth) - x,cameraHeight, position, cameraDepth, canvas.width, canvas.height, roadWidth);
-    project(segment.p2, (playerX * roadWidth) - x - dx, cameraHeight, position, cameraDepth, canvas.width, canvas.height, roadWidth);
+    project(segment.p1, (playerX * roadWidth) - x,playerY + cameraHeight, position, cameraDepth, canvas.width, canvas.height, roadWidth);
+    project(segment.p2, (playerX * roadWidth) - x - dx, playerY + cameraHeight, position, cameraDepth, canvas.width, canvas.height, roadWidth);
 
     x  = x + dx;
     dx = dx + segment.curve;
 
-    if ((segment.p1.camera.z <= cameraDepth) || 
-	      (segment.p2.screen.y >= CANVAS_HEIGHT)) {
+    if ((segment.p1.camera.z <= cameraDepth)  ||
+        (segment.p2.screen.y >= CANVAS_HEIGHT)||
+        (segment.p2.screen.y >= maxy)) {
 	  	continue;
 	  }
 	  drawRoadSegment(ctx, CANVAS_WIDTH, lanes,
@@ -202,7 +221,7 @@ function renderRoad(){
              segment.p2.screen.w,
              segment.color);
 
-	  maxy = segment.p2.screen.y;
+	          maxy = segment.p2.screen.y;
 
   }
 
