@@ -2,6 +2,8 @@
 
 var Game = {
 
+
+
   run: function(options) {
 
     Game.loadImages(options.images, function(images) {

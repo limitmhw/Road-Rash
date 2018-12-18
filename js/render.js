@@ -81,16 +81,19 @@ var Render = {
 
   //---------------------------------------------------------------------------
 
-  player: function(ctx, width, height, resolution, roadWidth, sprites, speedPercent, scale, destX, destY, steer, updown) {
+  player: function(ctx, width, height, resolution, roadWidth, sprites, speedPercent, scale, destX, destY, steer) {
 
     var bounce = (1.5 * Math.random() * speedPercent * resolution) * Util.randomChoice([-1,1]);
     var sprite;
     if (steer < 0)
-      sprite = (updown > 0) ? SPRITES.PLAYER_UPHILL_LEFT : SPRITES.PLAYER_LEFT;
+      sprite =  SPRITES.PLAYER_LEFT;
     else if (steer > 0)
-      sprite = (updown > 0) ? SPRITES.PLAYER_UPHILL_RIGHT : SPRITES.PLAYER_RIGHT;
+      sprite = SPRITES.PLAYER_RIGHT;
     else
-      sprite = (updown > 0) ? SPRITES.PLAYER_UPHILL_STRAIGHT : SPRITES.PLAYER_STRAIGHT;
+      sprite =  SPRITES.PLAYER_STRAIGHT;
+
+    if(keyZ){sprite = SPRITES.PLAYER_KICK_LEFT;}
+    else if (keyC){ sprite = SPRITES.PLAYER_KICK_RIGHT;}
 
     Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY + bounce, -0.5, -1);
   },

@@ -14,7 +14,6 @@ var Util = {
   easeIn:           function(a,b,percent)       { return a + (b-a)*Math.pow(percent,2);                           },
   easeOut:          function(a,b,percent)       { return a + (b-a)*(1-Math.pow(1-percent,2));                     },
   easeInOut:        function(a,b,percent)       { return a + (b-a)*((-Math.cos(percent*Math.PI)/2) + 0.5);        },
-  exponentialFog:   function(distance, density) { return 1 / (Math.pow(Math.E, (distance * distance * density))); },
 
   increase:  function(start, increment, max) {
     var result = start + increment;
