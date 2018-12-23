@@ -1,16 +1,17 @@
-// var startsound = new Audio('../music/before_start.mp3');
+
 var bikeForward = new Audio('./music/bike_forward.mp3');
 var kick = new Audio('./music/kick.mp3');
 var crash = new Audio('./music/bike_crash.mp3');
 
 
 var playerFinish = false ;
+var crossFinish = false;
 var enemyFinish= [];
 
 var lastPosition = 0;
 
 var playerPosition = 0;
-
+var currentPosition=0;
 
 
 

@@ -12,6 +12,11 @@ function update(dt) {
   // var startPosition = position;
 
   position = AllFn.increase(position, dt * speed, trackLength);
+  currentPosition += dt * speed;
+
+  if (currentPosition > trackLength) {
+    crossFinish = true;
+  }
 
   skyOffset  = AllFn.increase(skyOffset,  skySpeed  * playerSegment.curve * speedPercent, 1);
   hillOffset = AllFn.increase(hillOffset, hillSpeed * playerSegment.curve * speedPercent, 1);
@@ -19,33 +24,42 @@ function update(dt) {
 
 // console.log(countdown);
 
-// if(gameStart){
+  if(!crossFinish){
 
-  updateBikes(dt,playerSegment, playerW);
-  updateCars(dt, playerSegment,playerW);
+    updateBikes(dt,playerSegment, playerW);
+    updateCars(dt, playerSegment,playerW);
 
-  updatePlayerPosition();
+    updatePlayerPosition();
 
-  if (keyLeft)
-    playerX = playerX - dx;
-  else if (keyRight)
-    playerX = playerX + dx;
+    if (keyLeft)
+      playerX = playerX - dx;
+    else if (keyRight)
+      playerX = playerX + dx;
 
-  playerX = playerX - (dx * speedPercent * playerSegment.curve * centrifugal);
+    playerX = playerX - (dx * speedPercent * playerSegment.curve * centrifugal);
 
-  if (keyFaster){
-    bikeForward.play();
-    // bikeForward.loop = true;
-    speed = AllFn.accelerate(speed, accel, dt);
+    if (keyFaster){
+      bikeForward.play();
+      // bikeForward.loop = true;
+      speed = AllFn.accelerate(speed, accel, dt);
 
 
-  }
-  else if (keySlower){
-    speed = AllFn.accelerate(speed, breaking, dt);
-    bikeForward.pause();
     }
-  else
-    speed = AllFn.accelerate(speed, decel, dt);
+    else if (keySlower){
+      speed = AllFn.accelerate(speed, breaking, dt);
+      bikeForward.pause();
+      }
+    else
+      speed = AllFn.accelerate(speed, decel, dt);
+  }
+  else{
+    speed = 0;
+    // ctx.fillStyle = "black";
+    // ctx.font = "80px PerfectDark";
+    // text_width= ctx.measureText("GAME OVER!").width;
+    // ctx.fillText("GAME OVER!",1280/2 - text_width,320);
+    // speed=AllFn.accelerate(speed,breaking,dt);
+  }
 
 
 
