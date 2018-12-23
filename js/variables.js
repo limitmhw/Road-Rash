@@ -1,3 +1,19 @@
+// var startsound = new Audio('../music/before_start.mp3');
+var bikeForward = new Audio('./music/bike_forward.mp3');
+var kick = new Audio('./music/kick.mp3');
+var crash = new Audio('./music/bike_crash.mp3');
+
+
+var playerFinish = false ;
+var enemyFinish= [];
+
+var lastPosition = 0;
+
+var playerPosition = 0;
+
+
+
+
 var fps           = 60;
 var step          = 1/fps;
 var width         = 1280;
@@ -12,11 +28,13 @@ var hillOffset    = 0;
 var treeOffset    = 0;
 var segments      = [];
 
-var cars           = []; 
+var cars           = [];
 var totalCars = 30;
 
 var bikes         =[];
-var totalBikes = 50;
+var totalBikes = 4;
+
+
 
 var background    = null;
 var sprites       = null;
@@ -49,12 +67,18 @@ var keySlower     = false;
 var keyQ = false;
 var keyE = false;
 var keyZ = false;
-var keyC  = false;
+var keyC = false;
 
 var initialCD = false;
 
 
+var countdown = 3;
+var gameStart = false;
+var gameOver = false;
+var gmOv = 0;
+// var crossFinish = false;
 
+var rank = 0 ;
 var KEY = {
   LEFT:  37,
   UP:    38,
@@ -90,100 +114,51 @@ var SPRITES = {
   BIKE02: {x: 132,y:  0,w:  23, h:50},
   BIKE03: {x: 155,y:  0,w:  24, h:50},
 
+  GROUND:{x:  0,y:  103,w:  79,h: 13},
 
-  // BIKE01: { x:  0  , y:  0, w:   21,h:  50 },
-  // BIKE02: { x:  0  , y:  0, w:   21,h:  50 },
-  // BIKE03:{ x:  0  , y:  0, w:   21,h:  50 },
+  BOAT01: {x:354,y:0,w:118,h:45},
+  BOAT02: {x:497,y:0,w:89,h:37},
+  BOAT03: {x:354,y:82,w:156,h:41},
 
+  LIGHTHOUSE:{x:541,y:54,w:28,h:69},
 
-  // BAR01:  {x: 260,y:  70,w:  86,h: 70},
-  // BAR02:  {x: 96,y:  65,w: 83,h: 75},
 
   CAR01:  {x: 260,y:  0,w:  86,h: 70},
   CAR02:  {x: 179,y:  65,w: 82,h: 75},
 
+  BUILDING_LEFT: {x:1148, y: 3, w: 558, h: 965},
+  BUILDING_RIGHT: {x:549, y:158,w: 549, h: 740},
+
   PLAYER_KICK_LEFT:       { x:  179, y:  0, w:   34,h:  50 },
   PLAYER_KICK_RIGHT:      { x:  213, y:  0, w:   34,h:  50 },
-  PLAYER_UPHILL_LEFT:     { x:  27 , y:  0, w:   25,h:  50 },
-  PLAYER_UPHILL_STRAIGHT: { x:  0  , y:  0, w:   21,h:  50 },
-  PLAYER_UPHILL_RIGHT:    { x:  58 , y:  0, w:   25,h:  50 },
   PLAYER_LEFT:            { x:  27 , y:  0, w:   25,h:  50 },
   PLAYER_STRAIGHT:        { x:  0  , y:  0, w:   21,h:  50 },
   PLAYER_RIGHT:           { x:  58 , y:  0, w:   25,h:  50 }
 };
 
-SPRITES.SCALE = 0.1 * (1/SPRITES.PLAYER_STRAIGHT.w) //scaling the bike sprite
+SPRITES.SCALE = 0.1 * (1/SPRITES.PLAYER_STRAIGHT.w) //scaling the images
 
 SPRITES.CARS       = [SPRITES.CAR01, SPRITES.CAR02];
 SPRITES.BIKES      = [SPRITES.BIKE01, SPRITES.BIKE02, SPRITES.BIKE03];
-
-// const NO_OF_ENEMIES = 5;
-// const ENEMY_ACCELERATION_FACTOR = 80;
-// const ENEMY_COLLISION_SPEED_DECREASE_FACTOR = 1.4;
-// const ENEMY_IMAGES = [ 
-  
-//   {
-//     BIKE:{x: 111,y:0,w:21,h:50}
-//   },
-//   {
-//     BIKE:{x:132,y:0,w:23,h:50}
-//   },
-//   {
-//     BIKE:{x:155,y:0,w:24,h:50}
-//   }
-// ];
+SPRITES.SHIPS      = [SPRITES.BOAT01,SPRITES.BOAT02,SPRITES.BOAT03];
+SPRITES.BUILDINGS  = [SPRITES.BUILDING_LEFT,SPRITES.BUILDING_RIGHT];
 
 
-
-
-
-
-
-
-
-
-
-var Dom = {
-
-  get:  function(id)                     { return ((id instanceof HTMLElement) || (id === document)) ? id : document.getElementById(id); },
-  set:  function(id, html)               { Dom.get(id).innerHTML = html;                        },
-  on:   function(ele, type, fn, capture) { Dom.get(ele).addEventListener(type, fn, capture);    },
-  un:   function(ele, type, fn, capture) { Dom.get(ele).removeEventListener(type, fn, capture); },
-  show: function(ele, type)              { Dom.get(ele).style.display = (type || 'block');      },
-  blur: function(ev)                     { ev.target.blur();                                    },
-
-  addClassName:    function(ele, name)     { Dom.toggleClassName(ele, name, true);  },
-  removeClassName: function(ele, name)     { Dom.toggleClassName(ele, name, false); },
-  toggleClassName: function(ele, name, on) {
-    ele = Dom.get(ele);
-    var classes = ele.className.split(' ');
-    var n = classes.indexOf(name);
-    on = (typeof on == 'undefined') ? (n < 0) : on;
-    if (on && (n < 0))
-      classes.push(name);
-    else if (!on && (n >= 0))
-      classes.splice(n, 1);
-    ele.className = classes.join(' ');
+var getOn = {
+  get:  function(id){
+    return ((id instanceof HTMLElement) || (id === document)) ? id : document.getElementById(id);
   },
-
-  storage: window.localStorage || {}
-
+  on:   function(ele, type, fn, capture) {
+    getOn.get(ele).addEventListener(type, fn, capture);
+  },
 }
 
-var canvas        = Dom.get('canvas');
-var ctx           = canvas.getContext('2d');
+  var canvas        = getOn.get('canvas');
+  var ctx           = canvas.getContext('2d');
 
-
-
-
-// const ENEMY_WIDTH_MULTIPLIER = 13;
-// const ENEMY_Z_WIDTH = 200;
-
-// const NO_OF_ENEMIES = 3;
-// const ENEMY_ACCELERATION_FACTOR = 80;
-// const ENEMY_COLLISION_SPEED_DECREASE_FACTOR = 1.4;
-// const ENEMY_IMAGES = [
-//   {x: 111,y:0,w:21,h:50},
-//   {x:132,y:0,w:23,h:50},
-//   {x:155,y:0,w:24,h:50},
-// ];
+  // var degrees = 0;
+  // var new_degrees = 0;
+  // var difference = 0;
+  var color ;
+  var bgcolor = "#222";
+  var text;

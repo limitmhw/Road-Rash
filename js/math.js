@@ -1,19 +1,28 @@
 //mathematical calculations
 
-var Util = {
+var AllFn = {
 
   timestamp:        function()                  { return new Date().getTime();                                    },
-  toInt:            function(obj, def)          { if (obj !== null) { var x = parseInt(obj, 10); if (!isNaN(x)) return x; } return Util.toInt(def, 0); },
-  toFloat:          function(obj, def)          { if (obj !== null) { var x = parseFloat(obj);   if (!isNaN(x)) return x; } return Util.toFloat(def, 0.0); },
+  toInt:            function(obj, def)          {
+    if (obj !== null) {
+      var x = parseInt(obj, 10);
+    if (!isNaN(x)) return x; }
+      return AllFn.toInt(def, 0); },
+
+  //to limit values
   limit:            function(value, min, max)   { return Math.max(min, Math.min(value, max));                     },
-  randomInt:        function(min, max)          { return Math.round(Util.interpolate(min, max, Math.random()));   },
-  randomChoice:     function(options)           { return options[Util.randomInt(0, options.length-1)];            },
+  randomInt:        function(min, max)          { return Math.round(AllFn.interpolate(min, max, Math.random()));   },
+  randomChoice:     function(options)           { return options[AllFn.randomInt(0, options.length-1)];            },
+
   percentRemaining: function(n, total)          { return (n%total)/total;                                         },
+
+  //acceleration
   accelerate:       function(v, accel, dt)      { return v + (accel * dt);                                        },
   interpolate:      function(a,b,percent)       { return a + (b-a)*percent                                        },
-  easeIn:           function(a,b,percent)       { return a + (b-a)*Math.pow(percent,2);                           },
-  easeOut:          function(a,b,percent)       { return a + (b-a)*(1-Math.pow(1-percent,2));                     },
-  easeInOut:        function(a,b,percent)       { return a + (b-a)*((-Math.cos(percent*Math.PI)/2) + 0.5);        },
+
+  //for smooth transition in curves
+  transIn:           function(a,b,percent)       { return a + (b-a)*Math.pow(percent,2);                           },
+  transInOut:        function(a,b,percent)       { return a + (b-a)*((-Math.cos(percent*Math.PI)/2) + 0.5);        },
 
   increase:  function(start, increment, max) {
     var result = start + increment;
@@ -24,6 +33,7 @@ var Util = {
     return result;
   },
 
+  //projection
   project: function(p, cameraX, cameraY, cameraZ, cameraDepth, width, height, roadWidth) {
     p.camera.x     = (p.world.x || 0) - cameraX;
     p.camera.y     = (p.world.y || 0) - cameraY;
@@ -34,6 +44,7 @@ var Util = {
     p.screen.w     = Math.round(             (p.screen.scale * roadWidth   * width/2));
   },
 
+//for collision avoidance
   overlap: function(x1, w1, x2, w2, percent) {
     var half = (percent || 1)/2;
     var min1 = x1 - (w1*half);

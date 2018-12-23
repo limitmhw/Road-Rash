@@ -1,23 +1,25 @@
-
 //update function
+function update(dt) {
 
-function update(dt) { 
+
   var n, car, carW,bike,bikeW,sprite, spriteW;
   var playerSegment = findSegment(position+playerZ);
   var speedPercent  = speed/maxSpeed;
   var dx            = dt * 2 * speedPercent;
-
   var playerW       = SPRITES.PLAYER_STRAIGHT.w * SPRITES.SCALE;
+  position = AllFn.increase(position, dt * speed, trackLength);
 
-  var startPosition = position;
+  skyOffset  = AllFn.increase(skyOffset,  skySpeed  * playerSegment.curve * speedPercent, 1);
+  hillOffset = AllFn.increase(hillOffset, hillSpeed * playerSegment.curve * speedPercent, 1);
+  treeOffset = AllFn.increase(treeOffset, treeSpeed * playerSegment.curve * speedPercent, 1);
+
+// console.log(countdown);
+
+
   updateBikes(dt,playerSegment, playerW);
   updateCars(dt, playerSegment,playerW);
 
-  position = Util.increase(position, dt * speed, trackLength);
-
-  skyOffset  = Util.increase(skyOffset,  skySpeed  * playerSegment.curve * speedPercent, 1);
-  hillOffset = Util.increase(hillOffset, hillSpeed * playerSegment.curve * speedPercent, 1);
-  treeOffset = Util.increase(treeOffset, treeSpeed * playerSegment.curve * speedPercent, 1);
+  updatePlayerPosition();
 
   if (keyLeft)
     playerX = playerX - dx;
@@ -26,27 +28,37 @@ function update(dt) {
 
   playerX = playerX - (dx * speedPercent * playerSegment.curve * centrifugal);
 
-  if (keyFaster)
-    speed = Util.accelerate(speed, accel, dt);
-  else if (keySlower)
-    speed = Util.accelerate(speed, breaking, dt);
-  else
-    speed = Util.accelerate(speed, decel, dt);
+  if (keyFaster){
+    bikeForward.play();
+    // bikeForward.loop = true;
+    speed = AllFn.accelerate(speed, accel, dt);
 
-  // if (((playerX < -1) || (playerX > 1)) && (speed > offRoadLimit))
-  //   speed = Util.accelerate(speed, offRoadDecel, dt);
+
+  }
+  else if (keySlower){
+    speed = AllFn.accelerate(speed, breaking, dt);
+    bikeForward.pause();
+    }
+  else
+    speed = AllFn.accelerate(speed, decel, dt);
+
+
+
+  if (((playerX < -1) || (playerX > 1)) && (speed > offRoadLimit))
+    speed = AllFn.accelerate(speed, offRoadDecel, dt);
 
   if ((playerX < -1) || (playerX > 1)) {
 
     if (speed > offRoadLimit)
-      speed = Util.accelerate(speed, offRoadDecel, dt);
+      speed = AllFn.accelerate(speed, offRoadDecel, dt);
 
     for(n = 0 ; n < playerSegment.sprites.length ; n++) {
       sprite  = playerSegment.sprites[n];
       spriteW = sprite.source.w * SPRITES.SCALE;
-      if (Util.overlap(playerX, playerW, sprite.offset + spriteW/2 * (sprite.offset > 0 ? 1 : -1), spriteW)) {
+      if (AllFn.overlap(playerX, playerW, sprite.offset + spriteW/2 * (sprite.offset > 0 ? 1 : -1), spriteW)) {
+        crash.play();
         speed = maxSpeed/5;
-        position = Util.increase(playerSegment.p1.world.z, -playerZ, trackLength); // stop in front of sprite (at front of segment)
+        position = AllFn.increase(playerSegment.p1.world.z, -playerZ, trackLength);
         break;
       }
     }
@@ -57,9 +69,10 @@ function update(dt) {
     car  = playerSegment.cars[n];
     carW = car.sprite.w * SPRITES.SCALE;
     if (speed > car.speed) {
-      if (Util.overlap(playerX, playerW, car.offset, carW, 0.8)) {
+      if (AllFn.overlap(playerX, playerW, car.offset, carW, 0.8)) {
+        crash.play();
         speed    = car.speed * (car.speed/speed);
-        position = Util.increase(car.z, -playerZ, trackLength);
+        position = AllFn.increase(car.z, -playerZ, trackLength);
         break;
       }
     }
@@ -70,29 +83,54 @@ function update(dt) {
     bike  = playerSegment.bikes[n];
     bikeW = bike.sprite.w * SPRITES.SCALE;
     if (speed > bike.speed) {
-      if (Util.overlap(playerX, playerW, bike.offset, bikeW, 0.8)) {
+      if (AllFn.overlap(playerX, playerW, bike.offset, bikeW, 0.8)) {
+
+        if(playerX < bike.offset && keyC){
+          kick.play();
+          bike.offset += 0.5;
+        }
+
+        if(playerX > bike.offset && keyZ){
+          kick.play();
+          bike.offset -= 0.5;
+        }
+        crash.play();
         speed    = bike.speed * (bike.speed/speed);
-        position = Util.increase(bike.z, -playerZ, trackLength);
+        position = AllFn.increase(bike.z, -playerZ, trackLength);
         break;
       }
     }
   }
-  playerX = Util.limit(playerX, -2, 2);
-  speed   = Util.limit(speed, 0, maxSpeed);
 
 
+
+  playerX = AllFn.limit(playerX, -2, 2);
+  speed   = AllFn.limit(speed, 0, maxSpeed);
+
+
+  // console.log(AllFn.toInt(position));
+  // if(position < playerZ){
+  //   console.log(player);
+  //   // if(gmOv>4){
+  //   //   // gameOver();
+  //   //   // console.log(gmOv);
+  //   // }
+  //   // else
+  //     gmOv++;
+  // }
 
 }
 
 function updateBikes(dt, playerSegment, playerW){
-  // console.log('joshua');
+
+  // console.log(playerSegment);
   var m,bike, oldSegment, newSegment;
   for(m = 0; m< bikes.length; m++){
     bike        = bikes[m];
     oldSegment  = findSegment(bike.z);
-    bike.offset = bike.offset + updateBikeOffset(bike, oldSegment, playerSegment, playerW);
-    bike.z      = Util.increase(bike.z, dt * bike.speed, trackLength);
-    bike.percent= Util.percentRemaining(bike.z, segmentLength);
+    bike.offset = bike.offset + handleBikeDirection(bike, oldSegment, playerSegment, playerW);
+    bike.z      = AllFn.increase(bike.z, dt * bike.speed, trackLength);
+    bike.percent= AllFn.percentRemaining(bike.z, segmentLength);
     newSegment  = findSegment(bike.z);
     if(oldSegment != newSegment){
       index = oldSegment.bikes.indexOf(bike);
@@ -103,32 +141,29 @@ function updateBikes(dt, playerSegment, playerW){
 
 }
 
-function updateBikeOffset(bike, bikeSegment, playerSegment, playerW){
+function handleBikeDirection(bike, bikeSegment, playerSegment, playerW){
 
   var i,j,dir,segment,otherbike, otherbikeW, lookahead = 20, bikeW = bike.sprite.w * SPRITES.SCALE;
-
-  //optimization
-
   if((bikeSegment.index - playerSegment.index)>drawDistance)
     return 0;
 
   for(i=1 ; i < lookahead; i++){
     segment = segments[(bikeSegment.index+i)%segments.length];
 
-    if ((segment === playerSegment) && (bike.speed > speed) && (Util.overlap(playerX, playerW, bike.offset, bikeW, 1.2))) {
+    if ((segment === playerSegment) && (bike.speed > speed) && (AllFn.overlap(playerX, playerW, bike.offset, bikeW, 1.2))) {
       if (playerX > 0.5)
         dir = -1;
       else if (playerX < -0.5)
         dir = 1;
       else
         dir = (bike.offset > playerX) ? 1 : -1;
-      return dir * 1/i * (bike.speed-speed)/maxSpeed; // the closer the cars (smaller i) and the greated the speed ratio, the larger the offset
+      return dir * 1/i * (bike.speed-speed)/maxSpeed;
     }
-    // console.log('joshua');
+
     for(j = 0 ; j < segment.bikes.length ; j++) {
       otherbike  = segment.bikes[j];
       otherbikeW = otherbike.sprite.w * SPRITES.SCALE;
-      if ((bike.speed > otherbike.speed) && Util.overlap(bike.offset, bikeW, otherbike.offset, otherbikeW, 1.2)) {
+      if ((bike.speed > otherbike.speed) && AllFn.overlap(bike.offset, bikeW, otherbike.offset, otherbikeW, 1.2)) {
         if (otherbike.offset > 0.5)
           dir = -1;
         else if (otherbike.offset < -0.5)
@@ -140,13 +175,12 @@ function updateBikeOffset(bike, bikeSegment, playerSegment, playerW){
     }
   }
 
-
   if (bike.offset < -0.9)
-  return 0.1;
-else if (bike.offset > 0.9)
-  return -0.1;
-else
-  return 0;
+    return 0.1;
+  else if (bike.offset > 0.9)
+    return -0.1;
+  else
+    return 0;
 }
 
 function updateCars(dt, playerSegment, playerW) {
@@ -154,9 +188,9 @@ function updateCars(dt, playerSegment, playerW) {
   for(n = 0 ; n < cars.length ; n++) {
     car         = cars[n];
     oldSegment  = findSegment(car.z);
-    car.offset  = car.offset + updateCarOffset(car, oldSegment, playerSegment, playerW);
-    car.z       = Util.increase(car.z, dt * car.speed, trackLength);
-    car.percent = Util.percentRemaining(car.z, segmentLength); // useful for interpolation during rendering phase
+    car.offset  = car.offset + handleCarDirection(car, oldSegment, playerSegment, playerW);
+    car.z       = AllFn.increase(car.z, dt * car.speed, trackLength);
+    car.percent = AllFn.percentRemaining(car.z, segmentLength);
     newSegment  = findSegment(car.z);
     if (oldSegment != newSegment) {
       index = oldSegment.cars.indexOf(car);
@@ -166,31 +200,31 @@ function updateCars(dt, playerSegment, playerW) {
   }
 }
 
-function updateCarOffset(car, carSegment, playerSegment, playerW) {
+function handleCarDirection(car, carSegment, playerSegment, playerW) {
 
   var i, j, dir, segment, othercar, othercarW, lookahead = 20, carW = car.sprite.w * SPRITES.SCALE;
 
-  // optimization, dont bother steering around other cars when 'out of sight' of the player
+  //when out of render distance, no need to handle the offset
   if ((carSegment.index - playerSegment.index) > drawDistance)
     return 0;
 
   for(i = 1 ; i < lookahead ; i++) {
     segment = segments[(carSegment.index+i)%segments.length];
 
-    if ((segment === playerSegment) && (car.speed > speed) && (Util.overlap(playerX, playerW, car.offset, carW, 1.2))) {
+    if ((segment === playerSegment) && (car.speed > speed) && (AllFn.overlap(playerX, playerW, car.offset, carW, 1.2))) {
       if (playerX > 0.5)
         dir = -1;
       else if (playerX < -0.5)
         dir = 1;
       else
         dir = (car.offset > playerX) ? 1 : -1;
-      return dir * 1/i * (car.speed-speed)/maxSpeed; // the closer the cars (smaller i) and the greated the speed ratio, the larger the offset
+      return dir * 1/i * (car.speed-speed)/maxSpeed;
     }
 
     for(j = 0 ; j < segment.cars.length ; j++) {
       othercar  = segment.cars[j];
       othercarW = othercar.sprite.w * SPRITES.SCALE;
-      if ((car.speed > othercar.speed) && Util.overlap(car.offset, carW, othercar.offset, othercarW, 1.2)) {
+      if ((car.speed > othercar.speed) && AllFn.overlap(car.offset, carW, othercar.offset, othercarW, 1.2)) {
         if (othercar.offset > 0.5)
           dir = -1;
         else if (othercar.offset < -0.5)
@@ -202,7 +236,6 @@ function updateCarOffset(car, carSegment, playerSegment, playerW) {
     }
   }
 
-  // if no cars ahead, but I have somehow ended up off road, then steer back on
   if (car.offset < -0.9)
     return 0.1;
   else if (car.offset > 0.9)
@@ -211,16 +244,13 @@ function updateCarOffset(car, carSegment, playerSegment, playerW) {
     return 0;
 }
 
-
-
-
 function render() {
 
   var baseSegment   = findSegment(position);
-  var basePercent   = Util.percentRemaining(position, segmentLength);
+  var basePercent   = AllFn.percentRemaining(position, segmentLength);
   var playerSegment = findSegment(position+playerZ);
-  var playerPercent = Util.percentRemaining(position+playerZ, segmentLength);
-  var playerY       = Util.interpolate(playerSegment.p1.world.y, playerSegment.p2.world.y, playerPercent);
+  var playerPercent = AllFn.percentRemaining(position+playerZ, segmentLength);
+  var playerY       = AllFn.interpolate(playerSegment.p1.world.y, playerSegment.p2.world.y, playerPercent);
   var maxy          = height;
 
   var x  = 0;
@@ -236,19 +266,20 @@ function render() {
 
   for(n = 0 ; n < drawDistance ; n++) {
 
+
     segment        = segments[(baseSegment.index + n) % segments.length];
     segment.looped = segment.index < baseSegment.index;
     segment.clip   = maxy;
 
-    Util.project(segment.p1, (playerX * roadWidth) - x,      playerY + cameraHeight, position - (segment.looped ? trackLength : 0), cameraDepth, width, height, roadWidth);
-    Util.project(segment.p2, (playerX * roadWidth) - x - dx, playerY + cameraHeight, position - (segment.looped ? trackLength : 0), cameraDepth, width, height, roadWidth);
+    AllFn.project(segment.p1, (playerX * roadWidth) - x,      playerY + cameraHeight, position - (segment.looped ? trackLength : 0), cameraDepth, width, height, roadWidth);
+    AllFn.project(segment.p2, (playerX * roadWidth) - x - dx, playerY + cameraHeight, position - (segment.looped ? trackLength : 0), cameraDepth, width, height, roadWidth);
 
     x  = x + dx;
     dx = dx + segment.curve;
 
-    if ((segment.p1.camera.z <= cameraDepth)         || // behind us
-        (segment.p2.screen.y >= segment.p1.screen.y) || // back face cull
-        (segment.p2.screen.y >= maxy))                  // clip by (already rendered) hill
+    if ((segment.p1.camera.z <= cameraDepth)         ||
+        (segment.p2.screen.y >= segment.p1.screen.y) ||
+        (segment.p2.screen.y >= maxy))
       continue;
 
     Render.segment(ctx, width, lanes,
@@ -258,66 +289,67 @@ function render() {
                    segment.p2.screen.x,
                    segment.p2.screen.y,
                    segment.p2.screen.w,
-                   segment.fog,
-                   segment.color);
+                   segment.color,
+                   sprites);
 
     maxy = segment.p1.screen.y;
   }
 
+
   for(n = (drawDistance-1) ; n > 0 ; n--) {
     segment = segments[(baseSegment.index + n) % segments.length];
 
-    
 
-    
+
+
     for(i = 0 ; i < segment.cars.length ; i++) {
       car        = segment.cars[i];
       sprite      = car.sprite;
-      spriteScale = Util.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, car.percent);
-      spriteX     = Util.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     car.percent) + (spriteScale * car.offset * roadWidth * width/2);
-      spriteY     = Util.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     car.percent);
+      spriteScale = AllFn.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, car.percent);
+      spriteX     = AllFn.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     car.percent) + (spriteScale * car.offset * roadWidth * width/2);
+      spriteY     = AllFn.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     car.percent);
       Render.sprite(ctx, width, height, resolution, roadWidth, sprites, car.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip);
     }
+
     for(i = 0 ; i < segment.bikes.length ; i++) {
       bike        = segment.bikes[i];
       sprite      = bike.sprite;
       // console.log(sprite);
-      spriteScale = Util.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, bike.percent);
-      spriteX     = Util.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     bike.percent) + (spriteScale * bike.offset * roadWidth * width/2);
-      spriteY     = Util.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     bike.percent);
+      spriteScale = AllFn.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, bike.percent);
+      spriteX     = AllFn.interpolate(segment.p1.screen.x,     segment.p2.screen.x,     bike.percent) + (spriteScale * bike.offset * roadWidth * width/2);
+      spriteY     = AllFn.interpolate(segment.p1.screen.y,     segment.p2.screen.y,     bike.percent);
+
+
       Render.sprite(ctx, width, height, resolution, roadWidth, sprites, bike.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip);
     }
+
     for(i = 0 ; i < segment.sprites.length ; i++) {
       sprite      = segment.sprites[i];
-      spriteScale = segment.p1.screen.scale;
+      spriteScale = 4 * segment.p1.screen.scale;
+      // console.log(spriteScale);
       spriteX     = segment.p1.screen.x + (spriteScale * sprite.offset * roadWidth * width/2);
       spriteY     = segment.p1.screen.y;
       Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite.source, spriteScale, spriteX, spriteY, (sprite.offset < 0 ? -1 : 0), -1, segment.clip);
     }
 
+
     if (segment == playerSegment) {
       Render.player(ctx, width, height, resolution, roadWidth, sprites, speed/maxSpeed,
                     cameraDepth/playerZ,
                     width/2,
-                    (height/2) - (cameraDepth/playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
+                    (height/2) - (cameraDepth/playerZ * AllFn.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height/2),
                     speed * (keyLeft ? -1 : keyRight ? 1 : 0),
                     playerSegment.p2.world.y - playerSegment.p1.world.y);
     }
 
-
-
-
   }
-
+  speedoMeter(speed);
+  displayRank(rank,bikes.length+1);
 
 }
 
 
-
-
-
-
-//build the road 
+//build the road
 
 function lastY() {
   return (segments.length == 0) ? 0 : segments[segments.length-1].p2.world.y;
@@ -345,87 +377,79 @@ function addSprite(n, sprite, offset) {
 
 function addRoad(enter, hold, leave, curve, y) {
   var startY   = lastY();
-  var endY     = startY + (Util.toInt(y, 0) * segmentLength);
+  var endY     = startY + (AllFn.toInt(y, 0) * segmentLength);
   var n, total = enter + hold + leave;
   for(n = 0 ; n < enter ; n++)
-    addSegment(Util.easeIn(0, curve, n/enter), Util.easeInOut(startY, endY, n/total));
+    addSegment(AllFn.transIn(0, curve, n/enter), AllFn.transInOut(startY, endY, n/total));
   for(n = 0 ; n < hold  ; n++)
-    addSegment(curve, Util.easeInOut(startY, endY, (enter+n)/total));
+    addSegment(curve, AllFn.transInOut(startY, endY, (enter+n)/total));
   for(n = 0 ; n < leave ; n++)
-    addSegment(Util.easeInOut(curve, 0, n/leave), Util.easeInOut(startY, endY, (enter+hold+n)/total));
+    addSegment(AllFn.transInOut(curve, 0, n/leave), AllFn.transInOut(startY, endY, (enter+hold+n)/total));
 }
 
-var ROAD = {
-  LENGTH: { NONE: 0, SHORT:  25, MEDIUM:  50, LONG:  100 },
-  HILL:   { NONE: 0, LOW:    20, MEDIUM:  40, HIGH:   60 },
-  CURVE:  { NONE: 0, EASY:    2, MEDIUM:   4, HARD:    6 }
-};
-
-function addStraight(num) {
-  num = num || ROAD.LENGTH.MEDIUM;
-  addRoad(num, num, num, 0, 0);
+function addStraight(x) {
+  x = x || 50;
+  addRoad(x, x, x, 0, 0);
 }
 
-function addHill(num, height) {
-  num    = num    || ROAD.LENGTH.MEDIUM;
-  height = height || ROAD.HILL.MEDIUM;
-  addRoad(num, num, num, 0, height);
+function addHill(x, height) {
+  x    = x    || 50;
+  height = height || 40;
+  addRoad(x, x, x, 0, height);
 }
 
-function addCurve(num, curve, height) {
-  num    = num    || ROAD.LENGTH.MEDIUM;
-  curve  = curve  || ROAD.CURVE.MEDIUM;
-  height = height || ROAD.HILL.NONE;
-  addRoad(num, num, num, curve, height);
+function addCurve(x, curve, height) {
+  x    = x    || 50;
+  curve  = curve  || 4;
+  height = height || 0;
+  addRoad(x, x, x, curve, height);
 }
-    
-function addLowRollingHills(num, height) {
-  num    = num    || ROAD.LENGTH.SHORT;
-  height = height || ROAD.HILL.LOW;
-  addRoad(num, num, num,  0,  height/2);
-  addRoad(num, num, num,  0, -height);
-  addRoad(num, num, num,  0,  height);
-  addRoad(num, num, num,  0,  0);
-  addRoad(num, num, num,  0,  height/2);
-  addRoad(num, num, num,  0,  0);
+
+function addLowRollingHills(x, height) {
+  x    = x    || 25;
+  height = height || 20;
+  addRoad(x, x, x,  0,  height/2);
+  addRoad(x, x, x,  0, -height);
+  addRoad(x, x, x,  0,  height);
+  addRoad(x, x, x,  0,  0);
+  addRoad(x, x, x,  0,  height/2);
+  addRoad(x, x, x,  0,  0);
 }
 
 function addSCurves() {
-  addRoad(ROAD.LENGTH.MEDIUM, ROAD.LENGTH.MEDIUM, ROAD.LENGTH.MEDIUM,  -ROAD.CURVE.EASY,    ROAD.HILL.NONE);
-  addRoad(ROAD.LENGTH.MEDIUM, ROAD.LENGTH.MEDIUM, ROAD.LENGTH.MEDIUM,   ROAD.CURVE.MEDIUM,  ROAD.HILL.MEDIUM);
-  addRoad(ROAD.LENGTH.MEDIUM, ROAD.LENGTH.MEDIUM, ROAD.LENGTH.MEDIUM,   ROAD.CURVE.EASY,   -ROAD.HILL.LOW);
-  addRoad(ROAD.LENGTH.MEDIUM, ROAD.LENGTH.MEDIUM, ROAD.LENGTH.MEDIUM,  -ROAD.CURVE.EASY,    ROAD.HILL.MEDIUM);
-  addRoad(ROAD.LENGTH.MEDIUM, ROAD.LENGTH.MEDIUM, ROAD.LENGTH.MEDIUM,  -ROAD.CURVE.MEDIUM, -ROAD.HILL.MEDIUM);
+  addRoad(50, 50, 50,  -2,    0);
+  addRoad(50, 50, 50,   4,  40);
+  addRoad(50, 50, 50,   2,   -20);
+  addRoad(50, 50, 50,  -2,    40);
+  addRoad(50, 50, 50,  -4, -40);
 }
 
-function addDownhillToEnd(num) {
-  num = num || 200;
-  addRoad(num, num, num, -ROAD.CURVE.EASY, -lastY()/segmentLength);
+function addDownhillToEnd(x) {
+  x = x || 200;
+  addRoad(x, x, x, -2, -lastY()/segmentLength);
 }
 
 function resetRoad() {
   segments = [];
 
-  addStraight(ROAD.LENGTH.SHORT/2);
+  addStraight(25/2);
   addStraight();
-  addStraight();
-  addStraight();
-  addHill(ROAD.LENGTH.SHORT, ROAD.HILL.LOW);
+  // addHill(25, 20);
   addLowRollingHills();
-  addCurve(ROAD.LENGTH.MEDIUM, ROAD.CURVE.MEDIUM, ROAD.HILL.LOW);
+  addCurve(50, 4, 20);
   addLowRollingHills();
-  addCurve(ROAD.LENGTH.LONG, ROAD.CURVE.MEDIUM, ROAD.HILL.MEDIUM);
+  addCurve(100, 4, 40);
   addStraight();
-  addCurve(ROAD.LENGTH.LONG, -ROAD.CURVE.MEDIUM, ROAD.HILL.MEDIUM);
-  addHill(ROAD.LENGTH.LONG, ROAD.HILL.HIGH);
-  addCurve(ROAD.LENGTH.LONG, ROAD.CURVE.MEDIUM, -ROAD.HILL.LOW);
-  addHill(ROAD.LENGTH.LONG, -ROAD.HILL.MEDIUM);
+  addCurve(100, -4, 40);
+  addHill(100, 60);
+  addCurve(100, 4, -20);
+  addHill(100, -40);
   addStraight();
   addDownhillToEnd();
 
+  resetSprites();
   resetBikes();
   resetCars();
-  // resetBikes();
 
   segments[findSegment(playerZ).index + 2].color = COLORS.START;
   segments[findSegment(playerZ).index + 3].color = COLORS.START;
@@ -436,16 +460,61 @@ function resetRoad() {
 }
 
 function findSegment(z) {
-  return segments[Math.floor(z/segmentLength) % segments.length]; 
+  return segments[Math.floor(z/segmentLength) % segments.length];
 }
+
+//playerposition
+
+
+function updatePlayerPosition(){
+  if(true){ //to be checked if  crossFinish is true or not=================================================
+
+
+      var playerPosition=[];
+      var alreadyFinished=0;
+
+      for (var i = 0; i < bikes.length; i++) {
+          if(bikes[i].crossFinish){
+              alreadyFinished++;
+          }
+          else{
+              var key='enemy'+i;
+              playerPosition.push({'name':key,
+                  'position' : bikes[i].z});
+          }
+
+      }
+      playerPosition.push({'name':'player',
+          'position':position});
+
+      playerPosition.sort((a,b)=>{
+          return b.position-a.position;
+      });
+
+      for(var i=0;i<playerPosition.length;i++){
+          if(playerPosition[i].name=='player'){
+              var pposition=i+1+alreadyFinished;
+              rank = pposition;
+              // console.log(pposition, bikes.length+1);
+              lastPosition=pposition;
+              break;
+          }
+      }
+  }
+  else{
+      console.log(lastPosition,bikes.length + 1);
+  }
+
+}
+
 
 function resetCars() {
   cars = [];
   var n, car, segment, offset, z, sprite, speed;
   for (var n = 0 ; n < totalCars ; n++) {
-    offset = Math.random() * Util.randomChoice([-0.8, 0.8]);
+    offset = Math.random() * AllFn.randomChoice([-0.8, 0.8]);
     z      = Math.floor(Math.random() * segments.length) * segmentLength;
-    sprite = Util.randomChoice(SPRITES.CARS);
+    sprite = AllFn.randomChoice(SPRITES.CARS);
     speed  = maxSpeed/4;
     //  + Math.random() * maxSpeed/(sprite == SPRITES.SEMI ? 4 : 2);
     car = { offset: offset, z: z, sprite: sprite, speed: speed };
@@ -455,15 +524,18 @@ function resetCars() {
   }
 }
 
+
+
+
 function resetBikes() {
   bikes = [];
   var n, bike, segment, offset, z, sprite, speed;
+  // offset = 0;
   for (var n = 0 ; n < totalBikes ; n++) {
-    offset = Math.random() * Util.randomChoice([-0.8, 0.8]);
-    z      = Math.floor(Math.random() * segments.length) * segmentLength;
-    sprite = Util.randomChoice(SPRITES.BIKES);
-    speed  = maxSpeed/4;
-    //  + Math.random() * maxSpeed/(sprite == SPRITES.SEMI ? 4 : 2);
+    offset = Math.random() * AllFn.randomChoice([-0.8, 0.8]);
+    z = (cameraHeight * cameraDepth) + 5 * segmentLength;
+    sprite = AllFn.randomChoice(SPRITES.BIKES);
+    speed  = maxSpeed/(Math.random() * AllFn.randomChoice([2,4]));
     bike = { offset: offset, z: z, sprite: sprite, speed: speed };
     segment = findSegment(bike.z);
     segment.bikes.push(bike);
@@ -472,8 +544,23 @@ function resetBikes() {
 }
 
 
+function resetSprites() {
+  var n,i;
+  for(n=20;n<4000;n++){
 
-//game loop 
+    if(n%60 == 0)
+      addSprite(n,SPRITES.LIGHTHOUSE,3);
+    if(n%80 == 0)
+      addSprite(n,SPRITES.LIGHTHOUSE,-2);
+  }
+
+  for(i = 200 ; i < segments.length ; i += 3) {
+    addSprite(i, AllFn.randomChoice(SPRITES.SHIPS), AllFn.randomChoice([1,-1]) * (2 + Math.random() * 5));
+  }
+
+
+}
+
 
 Game.run({
   canvas: canvas,
@@ -508,15 +595,15 @@ Game.run({
 
 function reset(options) {
   options       = options || {};
-  canvas.width  = width  = Util.toInt(options.width,          width);
-  canvas.height = height = Util.toInt(options.height,         height);
-  lanes                  = Util.toInt(options.lanes,          lanes);
-  roadWidth              = Util.toInt(options.roadWidth,      roadWidth);
-  cameraHeight           = Util.toInt(options.cameraHeight,   cameraHeight);
-  drawDistance           = Util.toInt(options.drawDistance,   drawDistance);
-  fieldOfView            = Util.toInt(options.fieldOfView,    fieldOfView);
-  segmentLength          = Util.toInt(options.segmentLength,  segmentLength);
-  rumbleLength           = Util.toInt(options.rumbleLength,   rumbleLength);
+  canvas.width  = width  = AllFn.toInt(options.width,          width);
+  canvas.height = height = AllFn.toInt(options.height,         height);
+  lanes                  = AllFn.toInt(options.lanes,          lanes);
+  roadWidth              = AllFn.toInt(options.roadWidth,      roadWidth);
+  cameraHeight           = AllFn.toInt(options.cameraHeight,   cameraHeight);
+  drawDistance           = AllFn.toInt(options.drawDistance,   drawDistance);
+  fieldOfView            = AllFn.toInt(options.fieldOfView,    fieldOfView);
+  segmentLength          = AllFn.toInt(options.segmentLength,  segmentLength);
+  rumbleLength           = AllFn.toInt(options.rumbleLength,   rumbleLength);
   cameraDepth            = 1 / Math.tan((fieldOfView/2) * Math.PI/180);
   playerZ                = (cameraHeight * cameraDepth);
   resolution             = height/480;
