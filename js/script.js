@@ -6,7 +6,11 @@ function update(dt) {
   var playerSegment = findSegment(position+playerZ);
   var speedPercent  = speed/maxSpeed;
   var dx            = dt * 2 * speedPercent;
+  // var unow = AllFn.timestamp();
   var playerW       = SPRITES.PLAYER_STRAIGHT.w * SPRITES.SCALE;
+
+  // var startPosition = position;
+
   position = AllFn.increase(position, dt * speed, trackLength);
 
   skyOffset  = AllFn.increase(skyOffset,  skySpeed  * playerSegment.curve * speedPercent, 1);
@@ -15,6 +19,7 @@ function update(dt) {
 
 // console.log(countdown);
 
+// if(gameStart){
 
   updateBikes(dt,playerSegment, playerW);
   updateCars(dt, playerSegment,playerW);
@@ -119,7 +124,12 @@ function update(dt) {
   //     gmOv++;
   // }
 
+
 }
+
+
+
+
 
 function updateBikes(dt, playerSegment, playerW){
 
@@ -243,6 +253,7 @@ function handleCarDirection(car, carSegment, playerSegment, playerW) {
   else
     return 0;
 }
+
 
 function render() {
 
@@ -434,7 +445,9 @@ function resetRoad() {
 
   addStraight(25/2);
   addStraight();
-  // addHill(25, 20);
+  addStraight();
+  addStraight();
+  addHill(25, 20);
   addLowRollingHills();
   addCurve(50, 4, 20);
   addLowRollingHills();
@@ -502,7 +515,7 @@ function updatePlayerPosition(){
       }
   }
   else{
-      console.log(lastPosition,bikes.length + 1);
+      console.log(lastPosition,enemies.length + 1);
   }
 
 }
@@ -548,6 +561,9 @@ function resetSprites() {
   var n,i;
   for(n=20;n<4000;n++){
 
+    // addSprite(n,SPRITES.BUILDING_LEFT,-1);
+    // addSprite(n,SPRITES.BUILDING_RIGHT,1);
+    // n+=19;
     if(n%60 == 0)
       addSprite(n,SPRITES.LIGHTHOUSE,3);
     if(n%80 == 0)
