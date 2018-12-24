@@ -562,7 +562,8 @@ function resetBikes() {
     offset = Math.random() * AllFn.randomChoice([-0.8, 0.8]);
     z = (cameraHeight * cameraDepth) + 5 * segmentLength;
     sprite = AllFn.randomChoice(SPRITES.BIKES);
-    speed  = maxSpeed/(Math.random() * AllFn.randomChoice([2,4]));
+    // speed  = maxSpeed/(Math.random() * AllFn.randomChoice([2,4]));
+    speed = maxSpeed/1.5;
     bike = { offset: offset, z: z, sprite: sprite, speed: speed };
     segment = findSegment(bike.z);
     segment.bikes.push(bike);

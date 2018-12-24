@@ -26,6 +26,9 @@ var Game = {
         now = AllFn.timestamp();
 
         if(gameStart){
+
+
+
           dt  = Math.min(1, (now - last) / 1000);
           gdt = gdt + dt;
           while (gdt > step) {
@@ -34,6 +37,13 @@ var Game = {
           }
           render();
           last = now;
+          if(speed == 0 && crossFinish){
+            ctx.fillStyle = "black";
+            ctx.font = "80px PerfectDark";
+            text_width= ctx.measureText("GAME OVER!").width;
+            ctx.fillText("GAME OVER!",1280/2 - text_width,320);
+            // speed=AllFn.accelerate(speed,breaking,dt);
+          }
         }
         else{
 
