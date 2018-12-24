@@ -98,10 +98,10 @@ var KEY = {
 var COLORS = {
   SKY:  '#72D7EE',
   TREE: '#005108',
-  LIGHT:  { road: '#696969', grass: '#10AA10', rumble: 'white', lane: 'white'},
-  DARK:   { road: '#696969', grass: '#10AA10', rumble: 'grey'                   },
-  START:  { road: 'white',   grass: 'white',   rumble: 'white'                 },
-  FINISH: { road: 'black',   grass: 'black',   rumble: 'red'                 }
+  LIGHT:  { road: '#696969',  rumble: 'white', lane: 'white'},
+  DARK:   { road: '#696969',  rumble: 'grey' },
+  START:  { road: 'white',   grass: 'white',   rumble: 'white'},
+  FINISH: { road: 'black',   grass: 'black',   rumble: 'red'}
 };
 
 var BACKGROUND = {

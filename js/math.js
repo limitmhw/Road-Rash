@@ -5,8 +5,10 @@ var AllFn = {
   timestamp:        function()                  { return new Date().getTime();                                    },
   toInt:            function(obj, def)          {
     if (obj !== null) {
-      var x = parseInt(obj, 10);
-    if (!isNaN(x)) return x; }
+     var x = parseInt(obj, 10);
+     if (!isNaN(x))
+      return x;
+    }
       return AllFn.toInt(def, 0); },
 
   //to limit values
@@ -18,9 +20,9 @@ var AllFn = {
 
   //acceleration
   accelerate:       function(v, accel, dt)      { return v + (accel * dt);                                        },
-  interpolate:      function(a,b,percent)       { return a + (b-a)*percent                                        },
 
   //for smooth transition in curves
+  interpolate:      function(a,b,percent)       { return a + (b-a)*percent                                        },
   transIn:           function(a,b,percent)       { return a + (b-a)*Math.pow(percent,2);                           },
   transInOut:        function(a,b,percent)       { return a + (b-a)*((-Math.cos(percent*Math.PI)/2) + 0.5);        },
 
