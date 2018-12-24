@@ -543,7 +543,6 @@ function resetCars() {
     z      = Math.floor(Math.random() * segments.length) * segmentLength;
     sprite = AllFn.randomChoice(SPRITES.CARS);
     speed  = maxSpeed/4;
-    //  + Math.random() * maxSpeed/(sprite == SPRITES.SEMI ? 4 : 2);
     car = { offset: offset, z: z, sprite: sprite, speed: speed };
     segment = findSegment(car.z);
     segment.cars.push(car);
