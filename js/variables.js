@@ -33,7 +33,7 @@ var cars           = [];
 var totalCars = 30;
 
 var bikes         =[];
-var totalBikes = 4;
+var totalBikes = 8;
 
 
 

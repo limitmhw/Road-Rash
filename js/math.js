@@ -2,29 +2,47 @@
 
 var AllFn = {
 
-  timestamp:        function()                  { return new Date().getTime();                                    },
-  toInt:            function(obj, def)          {
+  timestamp:function(){
+    return new Date().getTime();
+  },
+
+  toInt:function(obj, def){
     if (obj !== null) {
      var x = parseInt(obj, 10);
      if (!isNaN(x))
       return x;
     }
-      return AllFn.toInt(def, 0); },
+      return AllFn.toInt(def, 0);
+  },
 
   //to limit values
-  limit:            function(value, min, max)   { return Math.max(min, Math.min(value, max));                     },
-  randomInt:        function(min, max)          { return Math.round(AllFn.interpolate(min, max, Math.random()));   },
-  randomChoice:     function(options)           { return options[AllFn.randomInt(0, options.length-1)];            },
-
-  percentRemaining: function(n, total)          { return (n%total)/total;                                         },
+  limit:function(value, min, max){
+    return Math.max(min, Math.min(value, max));
+  },
+  randomInt:function(min, max){
+    return Math.round(AllFn.interpolate(min, max, Math.random()));
+  },
+  randomChoice:function(options){
+    return options[AllFn.randomInt(0, options.length-1)];
+  },
+  percentRemaining: function(n, total){
+    return (n%total)/total;
+  },
 
   //acceleration
-  accelerate:       function(v, accel, dt)      { return v + (accel * dt);                                        },
+  accelerate:function(v, accel, dt){
+    return v + (accel * dt);
+  },
 
   //for smooth transition in curves
-  interpolate:      function(a,b,percent)       { return a + (b-a)*percent                                        },
-  transIn:           function(a,b,percent)       { return a + (b-a)*Math.pow(percent,2);                           },
-  transInOut:        function(a,b,percent)       { return a + (b-a)*((-Math.cos(percent*Math.PI)/2) + 0.5);        },
+  interpolate:function(a,b,percent){
+    return a + (b-a)*percent;
+  },
+  transIn:function(a,b,percent){
+    return a + (b-a)*Math.pow(percent,2);
+  },
+  transInOut:function(a,b,percent){ return a + (b-a)*((-Math.cos(percent*Math.PI)/2) + 0.5);
+  },
 
   increase:  function(start, increment, max) {
     var result = start + increment;
